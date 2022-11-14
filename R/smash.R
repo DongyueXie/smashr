@@ -647,11 +647,16 @@ smash.gaus = function (x, sigma = NULL, v.est = FALSE, joint = FALSE,
         } else {
             mu.est = mu.res$mu.est
         }
-        var.est = (x - mu.est)^2
-        var.var.est = 2/3 * var.est^2
-        var.res = var.smooth(var.est, var.var.est, 0, basis, v.basis, Wl,
-                             filter.number, family, post.var, ashparam,
-                             jash, 1, J, n, SGD = SGD)
+        if(homoskedastic){
+          var.res = rep(mean((x - mu.est)^2),n)
+        }else{
+          var.est = (x - mu.est)^2
+          var.var.est = 2/3 * var.est^2
+          var.res = var.smooth(var.est, var.var.est, 0, basis, v.basis, Wl,
+                               filter.number, family, post.var, ashparam,
+                               jash, 1, J, n, SGD = SGD)
+        }
+
         if (post.var == FALSE) {
             var.res[var.res <= 0] = min.var
 
