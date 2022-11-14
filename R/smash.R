@@ -561,9 +561,7 @@ smash.gaus = function (x, sigma = NULL, v.est = FALSE, joint = FALSE,
     J = log2(length(x))
     n = length(x)
 
-   if (length(sigma) == 1) {
-      sigma = rep(sigma, n)
-   }
+
 
     if(!v.est & homoskedastic){
         stop("Error: can't set homoskedastic TRUE if not estimating variance")
@@ -571,6 +569,10 @@ smash.gaus = function (x, sigma = NULL, v.est = FALSE, joint = FALSE,
     if(v.est & homoskedastic){
       sigma = sd_estimate_gasser_etal(x)
       v.est = FALSE;
+    }
+
+    if (length(sigma) == 1) {
+      sigma = rep(sigma, n)
     }
 
      ashparam = setAshParam.gaus(ashparam)
