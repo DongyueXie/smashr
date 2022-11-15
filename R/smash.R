@@ -757,7 +757,7 @@ sd_estimate_gasser_etal = function(x){
 #'
 ti.thresh = function (x, sigma = NULL, method = "smash", filter.number = 1,
                       family = "DaubExPhase", min.level = 3,
-                      ashparam = list()) {
+                      ashparam = list(),return_sd = FALSE) {
     n = length(x)
     J = log2(n)
     if (length(sigma) == 1)
@@ -807,7 +807,12 @@ ti.thresh = function (x, sigma = NULL, method = "smash", filter.number = 1,
                               type = "hard")
         mu.est = AvBasis(convert(x.w.t))
     }
-    return(mu.est)
+    if(return_sd){
+      return(list(mu.est=mu.est,sigma=sigma))
+    }else{
+      return(mu.est)
+    }
+
 }
 
 #' @title Reflect and extend a vector.
