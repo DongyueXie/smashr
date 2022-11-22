@@ -185,6 +185,21 @@ shrink.wc = function (wc, wc.var.sqrt, ashparam, jash, df, SGD) {
     return(zdat.ash)
 }
 
+#' @importFrom ebnm ebnm
+shrink.wc.ebnm = function(wc, wc.var.sqrt, ebnm_param){
+  ebnm_fit = withCallingHandlers(do.call(ebnm,
+                                         c(list(x=wc, s=wc.var.sqrt), ebnm_param)))
+  return(ebnm_fit)
+}
+
+get_pm_ebnm = function(a){
+  a$posterior$mean
+}
+
+get_psd_ebnm = function(a){
+  a$posterior$sd
+}
+
 # Returns "mu.est" if posterior variances are not computed, and a list
 # with elements "mu.est" and "mu.est.var" otherwise.
 #
@@ -200,7 +215,7 @@ shrink.wc = function (wc, wc.var.sqrt, ashparam, jash, df, SGD) {
 #' @importFrom ashr get_psd
 #'
 mu.smooth = function (wc, data.var, basis, tsum, Wl, return.loglr,
-                      post.var, ashparam, J, n) {
+                      post.var, ebnm_param, J, n) {
     wmean = matrix(0, J, n)
     wvar = matrix(0, J, n)
     if (basis[[1]] == "haar") {
@@ -210,10 +225,11 @@ mu.smooth = function (wc, data.var, basis, tsum, Wl, return.loglr,
         loglik.scale = c()
         for (j in 0:(J - 1)) {
             ind.nnull = (vtable[j + 2, ] != 0)
-            zdat.ash = shrink.wc(y[j + 2, ind.nnull], sqrt(vtable[j + 2,
-                                 ind.nnull]), ashparam, jash = FALSE,
-                                 df = NULL, SGD = FALSE)
-            wmean[j + 1, ind.nnull] = get_pm(zdat.ash)/2
+            # zdat.ash = shrink.wc(y[j + 2, ind.nnull], sqrt(vtable[j + 2,
+            #                      ind.nnull]), ashparam, jash = FALSE,
+            #                      df = NULL, SGD = FALSE)
+            zdat.ash = shrink.wc.ebnm(y[j + 2, ind.nnull], sqrt(vtable[j + 2, ind.nnull]), ebnm_param)
+            wmean[j + 1, ind.nnull] = get_pm_ebnm(zdat.ash)/2
             wmean[j + 1, !ind.nnull] = 0
             if (return.loglr == TRUE) {
                 spins = 2^(j + 1)
@@ -226,7 +242,7 @@ mu.smooth = function (wc, data.var, basis, tsum, Wl, return.loglr,
                 logLR.scale[j + 1] = logLR.temp
             }
             if (post.var == TRUE) {
-                wvar[j + 1, ind.nnull] = get_psd(zdat.ash)^2/4
+                wvar[j + 1, ind.nnull] = get_psd_ebnm(zdat.ash)^2/4
                 wvar[j + 1, !ind.nnull] = 0
             }
         }
@@ -253,10 +269,9 @@ mu.smooth = function (wc, data.var, basis, tsum, Wl, return.loglr,
             x.w.j = wavethresh::accessD(x.w, j)
             x.w.v.j = x.w.v[index]
             ind.nnull = (x.w.v.j != 0)
-            zdat.ash = shrink.wc(x.w.j[ind.nnull],
-              sqrt(x.w.v.j[ind.nnull]), ashparam, jash = FALSE,
-                df = NULL, SGD = FALSE)
-            x.pm[ind.nnull] = get_pm(zdat.ash)
+            zdat.ash = shrink.wc.ebnm(x.w.j[ind.nnull],
+              sqrt(x.w.v.j[ind.nnull]), ebnm_param)
+            x.pm[ind.nnull] = get_pm_ebnm(zdat.ash)
             x.pm[!ind.nnull] = 0
             x.w = wavethresh::putD(x.w, j, x.pm)
             if (return.loglr == TRUE) {
@@ -270,7 +285,7 @@ mu.smooth = function (wc, data.var, basis, tsum, Wl, return.loglr,
                 logLR.scale[j + 1] = logLR.temp
             }
             if (post.var == TRUE) {
-              x.w.v.s[index[ind.nnull]] = get_psd(zdat.ash)^2
+              x.w.v.s[index[ind.nnull]] = get_psd_ebnm(zdat.ash)^2
               x.w.v.s[index[!ind.nnull]] = 0
             }
         }
@@ -304,8 +319,8 @@ mu.smooth = function (wc, data.var, basis, tsum, Wl, return.loglr,
 #' @importFrom ashr get_psd
 #' @importFrom wavethresh wd
 var.smooth = function (data, data.var, x.var.ini, basis, v.basis, Wl,
-                       filter.number, family, post.var, ashparam, jash,
-                       weight, J, n, SGD) {
+                       filter.number, family, post.var, ebnm_param, jash,
+                       weight, J, n, SGD){
     wmean = matrix(0, J, n)
     wvar = matrix(0, J, n)
     if (basis[[1]] == "haar" | v.basis == FALSE) {
@@ -313,22 +328,20 @@ var.smooth = function (data, data.var, x.var.ini, basis, v.basis, Wl,
         vdtable = cxxtitable(data)$difftable
         for (j in 0:(J - 1)) {
             ind.nnull = (vtable[j + 2, ] != 0)
-            zdat.ash = shrink.wc(vdtable[j + 2, ind.nnull],
+            zdat.ash = shrink.wc.ebnm(vdtable[j + 2, ind.nnull],
                                  sqrt(vtable[j + 2, ind.nnull]),
-                                ashparam, jash = jash,
-                                 df = min(50, 2^(j + 1)), SGD = SGD)
-            wmean[j + 1, ind.nnull] = get_pm(zdat.ash)/2
+                                 ebnm_param)
+            wmean[j + 1, ind.nnull] = get_pm_ebnm(zdat.ash)/2
             wmean[j + 1, !ind.nnull] = 0
             if ((sum(is.na(wmean[j + 1, ])) > 0) & (SGD == TRUE)) {
-                zdat.ash = shrink.wc(vdtable[j + 2, ind.nnull],
+                zdat.ash = shrink.wc.ebnm(vdtable[j + 2, ind.nnull],
                                      sqrt(vtable[j + 2, ind.nnull]),
-                                     ashparam, jash = jash,
-                  df = min(50, 2^(j + 1)), SGD = FALSE)
-                wmean[j + 1, ind.nnull] = get_pm(zdat.ash)/2
+                                     ebnm_param)
+                wmean[j + 1, ind.nnull] = get_pm_ebnm(zdat.ash)/2
                 wmean[j + 1, !ind.nnull] = 0
             }
             if (post.var == TRUE) {
-                wvar[j + 1, ind.nnull] = get_psd(zdat.ash)^2/4
+                wvar[j + 1, ind.nnull] = get_psd_ebnm(zdat.ash)^2/4
                 wvar[j + 1, !ind.nnull] = 0
             }
         }
@@ -352,22 +365,20 @@ var.smooth = function (data, data.var, x.var.ini, basis, v.basis, Wl,
             x.w.j = accessD(x.w, j)
             x.w.v.j = x.w.v[index]
             ind.nnull = (x.w.v.j != 0)
-            zdat.ash = shrink.wc(x.w.j[ind.nnull], sqrt(x.w.v.j[ind.nnull]),
-                                 ashparam, jash = jash,
-                df = min(50, 2^(j + 1)), SGD = SGD)
-            x.pm[ind.nnull] = get_pm(zdat.ash)
+            zdat.ash = shrink.wc.ebnm(x.w.j[ind.nnull], sqrt(x.w.v.j[ind.nnull]),
+                                      ebnm_param)
+            x.pm[ind.nnull] = get_pm_ebnm(zdat.ash)
             x.pm[!ind.nnull] = 0
             if ((sum(is.na(x.pm)) > 0) & (SGD == TRUE)) {
                 zdat.ash =
-                   shrink.wc(x.w.j[ind.nnull], sqrt(x.w.v.j[ind.nnull]),
-                             ashparam, jash = jash,
-                  df = min(50, 2^(j + 1)), SGD = FALSE)
-                x.pm[ind.nnull] = get_pm(zdat.ash)
+                   shrink.wc.ebnm(x.w.j[ind.nnull], sqrt(x.w.v.j[ind.nnull]),
+                                  ebnm_param)
+                x.pm[ind.nnull] = get_pm_ebnm(zdat.ash)
                 x.pm[!ind.nnull] = 0
             }
             x.w = putD(x.w, j, x.pm)
             if (post.var == TRUE) {
-                x.w.v.s[index[ind.nnull]] = get_psd(zdat.ash)^2
+                x.w.v.s[index[ind.nnull]] = get_psd_ebnm(zdat.ash)^2
                 x.w.v.s[index[!ind.nnull]] = 0
             }
         }
@@ -414,6 +425,39 @@ setAshParam.gaus = function (ashparam) {
     stop(paste("Error: invalid parameter 'prior', 'prior' can be",
                "a number or 'nullbiased' or 'uniform'"))
   return(ashparam)
+}
+
+# Set default ebnm parameters.
+#
+#' @importFrom utils modifyList
+setebnm_param.gaus = function (ebnm_param) {
+
+  if (!is.list(ebnm_param))
+    stop("Error: invalid parameter 'ashparam'")
+  ebnm_param.default = list(prior_family = "point_laplace",
+                            mode = 0,
+                            scale = "estimate",
+                            g_init = NULL,
+                            fix_g = FALSE,
+                            output = output_default(),
+                            optmethod = NULL)
+  ebnm_param = modifyList(ebnm_param.default, ebnm_param)
+  # if (!is.null(ashparam[["g"]]))
+  #   stop(paste("Error: ash parameter 'g' can only be NULL; if you want",
+  #              "to specify ash parameter 'g' use multiseq arguments",
+  #              "'fitted.g' and/or 'fitted.g.intercept'"))
+  #
+  # if (!((is.null(ashparam[["mixsd"]])) |
+  #       (is.numeric(ashparam[["mixsd"]]) &
+  #        (length(ashparam[["mixsd"]]) < 2))))
+  #   stop(paste("Error: invalid parameter 'mixsd', 'mixsd' must be",
+  #              "null or a numeric vector of length >=2"))
+  # if (!((ashparam[["prior"]] == "nullbiased") |
+  #       (ashparam[["prior"]] == "uniform") |
+  #       is.numeric(ashparam[["prior"]])))
+  #   stop(paste("Error: invalid parameter 'prior', 'prior' can be",
+  #              "a number or 'nullbiased' or 'uniform'"))
+  return(ebnm_param)
 }
 
 #' @title Estimate underlying mean function from noisy Gaussian data.
@@ -530,7 +574,7 @@ smash.gaus = function (x, sigma = NULL, v.est = FALSE, joint = FALSE,
                        v.basis = FALSE, post.var = FALSE, filter.number = 1,
                        family = "DaubExPhase", return.loglr = FALSE,
                        jash = FALSE, SGD = TRUE, weight = 0.5,
-                       min.var = 1e-08, ashparam = list(),
+                       min.var = 1e-08, ebnm_param = list(),
                        homoskedastic = FALSE, reflect=FALSE) {
 
    # Check inputs x.
@@ -575,7 +619,7 @@ smash.gaus = function (x, sigma = NULL, v.est = FALSE, joint = FALSE,
       sigma = rep(sigma, n)
     }
 
-     ashparam = setAshParam.gaus(ashparam)
+    ebnm_param = setebnm_param.gaus(ebnm_param)
 
 
     if (v.est) {
@@ -611,20 +655,20 @@ smash.gaus = function (x, sigma = NULL, v.est = FALSE, joint = FALSE,
         var.est2.ini = (rshift(x) - x)^2/2
         var.est.ini = (var.est1.ini + var.est2.ini)/2
         mu.est = mu.smooth(x.w.d, var.est.ini, basis, tsum, Wl, FALSE,
-                           FALSE, ashparam, J, n)
+                           FALSE, ebnm_param, J, n)
         var.est = (x - mu.est)^2
         var.var.est = 2/3 * var.est^2
         var.est = var.smooth(var.est, var.var.est, var.est.ini, basis,
                              v.basis, Wl, filter.number, family, FALSE,
-                             ashparam, jash, weight, J, n, SGD = SGD)
+                             ebnm_param, jash, weight, J, n, SGD = SGD)
         var.est[var.est <= 0] = 1e-08
         sigma = sqrt(var.est)
     }
 
-    ashparam.mean = ashparam
-    ashparam.mean$gridmult = 64
+    #ashparam.mean = ashparam
+    #ashparam.mean$gridmult = 64
     mu.res = mu.smooth(x.w.d, sigma^2, basis, tsum, Wl, return.loglr,
-                       post.var, ashparam.mean, J, n)
+                       post.var, ebnm_param, J, n)
 
     if (!v.est) {
 
@@ -653,7 +697,7 @@ smash.gaus = function (x, sigma = NULL, v.est = FALSE, joint = FALSE,
           var.est = (x - mu.est)^2
           var.var.est = 2/3 * var.est^2
           var.res = var.smooth(var.est, var.var.est, 0, basis, v.basis, Wl,
-                               filter.number, family, post.var, ashparam,
+                               filter.number, family, post.var, ebnm_param,
                                jash, 1, J, n, SGD = SGD)
         }
 
