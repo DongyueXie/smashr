@@ -187,7 +187,7 @@ shrink.wc = function (wc, wc.var.sqrt, ashparam, jash, df, SGD) {
 
 # A wrapper function for code in mu.smooth and var.smooth.
 #
-#' @importFrom ebnm ebnm
+#'@importFrom ebnm ebnm
 shrink.wc.ebnm = function(wc, wc.var.sqrt, ebnm_param){
   ebnm_fit = withCallingHandlers(do.call(ebnm,
                                          c(list(x=wc, s=wc.var.sqrt), ebnm_param)))

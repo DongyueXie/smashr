@@ -18,7 +18,7 @@ smash.gaus(
   SGD = TRUE,
   weight = 0.5,
   min.var = 1e-08,
-  ashparam = list(),
+  ebnm_param = list(),
   homoskedastic = FALSE,
   reflect = FALSE
 )
@@ -67,14 +67,14 @@ to 1 might improve variance estimation slightly.}
 \item{min.var}{The minimum positive value to be set if the
 variance estimates are non-positive.}
 
-\item{ashparam}{A list of parameters to be passed to \code{ash};
-default values are set by function \code{setAshParam.gaus}.}
-
 \item{homoskedastic}{indicates whether to assume constant variance
 (if v.est is true)}
 
 \item{reflect}{A logical indicating if the signals should be
 reflected.}
+
+\item{ashparam}{A list of parameters to be passed to \code{ash};
+default values are set by function \code{setAshParam.gaus}.}
 }
 \value{
 By default \code{smash.gaus} simply returns a vector of estimated means.

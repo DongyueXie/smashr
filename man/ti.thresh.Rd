@@ -11,7 +11,8 @@ ti.thresh(
   filter.number = 1,
   family = "DaubExPhase",
   min.level = 3,
-  ashparam = list()
+  ashparam = list(),
+  return_sd = FALSE
 )
 }
 \arguments{
