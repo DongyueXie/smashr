@@ -185,6 +185,8 @@ shrink.wc = function (wc, wc.var.sqrt, ashparam, jash, df, SGD) {
     return(zdat.ash)
 }
 
+# A wrapper function for code in mu.smooth and var.smooth.
+#
 #' @importFrom ebnm ebnm
 shrink.wc.ebnm = function(wc, wc.var.sqrt, ebnm_param){
   ebnm_fit = withCallingHandlers(do.call(ebnm,
@@ -439,7 +441,6 @@ setebnm_param.gaus = function (ebnm_param) {
                             scale = "estimate",
                             g_init = NULL,
                             fix_g = FALSE,
-                            output = output_default(),
                             optmethod = NULL)
   ebnm_param = modifyList(ebnm_param.default, ebnm_param)
   # if (!is.null(ashparam[["g"]]))
