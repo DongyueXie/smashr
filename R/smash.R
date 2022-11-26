@@ -435,8 +435,8 @@ setAshParam.gaus = function (ashparam) {
 setebnm_param.gaus = function (ebnm_param) {
 
   if (!is.list(ebnm_param))
-    stop("Error: invalid parameter 'ashparam'")
-  ebnm_param.default = list(prior_family = "point_laplace",
+    stop("Error: invalid parameter 'ebnm_param'")
+  ebnm_param.default = list(prior_family = "normal_scale_mixture",
                             mode = 0,
                             scale = "estimate",
                             g_init = NULL,
@@ -802,7 +802,7 @@ sd_estimate_gasser_etal = function(x){
 #'
 ti.thresh = function (x, sigma = NULL, method = "smash", filter.number = 1,
                       family = "DaubExPhase", min.level = 3,
-                      ashparam = list(),return_sd = FALSE) {
+                      ebnm_param = list(),return_sd = FALSE) {
     n = length(x)
     J = log2(n)
     if (length(sigma) == 1)
@@ -818,7 +818,7 @@ ti.thresh = function (x, sigma = NULL, method = "smash", filter.number = 1,
         if (method == "smash") {
             sigma = sqrt(smash.gaus(x, v.est = TRUE, v.basis = TRUE,
                                     filter.number = filter.number,
-                                    family = family, ashparam = ashparam,
+                                    family = family, ebnm_param = ebnm_param,
                                     weight = 1))
         } else if (method == "rmad") {
             x.w = wavethresh::wd(x, filter.number = filter.number,
